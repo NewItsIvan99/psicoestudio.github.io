@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App de Estudio - Repaso Exacto v2</title>
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --primary-hover: #4338CA;
+            --bg: #F3F4F6;
+            --card-bg: #FFFFFF;
+            --text: #1F2937;
+            --border: #E5E7EB;
+            --success: #10B981;
+            --error: #EF4444;
+            --accent: #F59E0B;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background-color: var(--card-bg);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        h1, h2, h3 { margin-top: 0; }
+        
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.2s;
+        }
+
+        button:hover { background-color: var(--primary-hover); }
+        .btn-secondary { background-color: #6B7280; }
+        .btn-secondary:hover { background-color: #4B5563; }
+        .btn-danger { background-color: var(--error); }
+        .btn-danger:hover { background-color: #DC2626; }
+        .btn-accent { background-color: var(--accent); }
+        .btn-accent:hover { background-color: #D97706; }
+
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0 16px 0;
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+
+        textarea { resize: vertical; min-height: 100px; }
+
+        /* Vistas */
+        .view { display: none; }
+        .view.active { display: block; }
+
+        /* Lista de Temas */
+        .topic-list { list-style: none; padding: 0; }
+        .topic-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+        .topic-actions button { margin-left: 5px; }
+
+        /* Formulario de puntos */
+        .point-container {
+            border: 1px solid var(--border);
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            background-color: #F9FAFB;
+        }
+
+        /* Repaso */
+        #feedback-msg {
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+        }
+        .correct { background-color: #D1FAE5; color: var(--success); }
+        .incorrect { background-color: #FEE2E2; color: var(--error); }
+
+        /* Sección Sincronización / Copia de seguridad */
+        .sync-section {
+            background-color: #F3F4F6;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 30px;
+            border: 1px dashed #9CA3AF;
+        }
+        .sync-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+        .file-input-wrapper input[type=file] {
+            font-size: 100px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        hr { border: 0; border-top: 1px solid var(--border); margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    
+    <!-- VISTA PRINCIPAL: Lista de Temas -->
+    <div id="view-home" class="view active">
+        <h1>Mis Temas de Estudio</h1>
+        <button onclick="showCreateView()">+ Crear Nuevo Tema</button>
+        <hr>
+        <ul id="topics-container" class="topic-list">
+            <!-- Los temas se inyectarán aquí por JS -->
+        </ul>
+
+        <!-- Sección de Sincronización Alternativa (Exportar/Importar) -->
+        <div class="sync-section">
+            <h3>Sincronización y Copias de Seguridad</h3>
+            <p style="font-size: 14px; color: #4B5563; margin: 0 0 10px 0;">
+                Como esta aplicación se ejecuta desde tu archivo local, puedes llevar tus temas a otro dispositivo exportando tus datos en un archivo e importándolo en el otro dispositivo.
+            </p>
+            <div class="sync-buttons">
+                <button onclick="exportData()" class="btn-secondary">⬇️ Exportar Temas (JSON)</button>
+                <div class="file-input-wrapper">
+                    <button class="btn-secondary">⬆️ Importar Temas (JSON)</button>
+                    <input type="file" id="import-file" accept=".json" onchange="importData(event)">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VISTA DE CREACIÓN / EDICIÓN: Añadir o Modificar Tema -->
+    <div id="view-create" class="view">
+        <h2 id="create-view-title">Crear Nuevo Tema</h2>
+        <label>Nombre del Tema:</label>
+        <input type="text" id="new-topic-name" placeholder="Ej. Historia de España">
+        
+        <div id="points-container">
+            <!-- Los puntos de estudio se inyectarán aquí -->
+        </div>
+
+        <button onclick="addPointField()" class="btn-secondary">+ Añadir otro punto</button>
+        <hr>
+        <button onclick="saveTopic()">Guardar Tema Completo</button>
+        <button onclick="showView('view-home')" class="btn-danger">Cancelar</button>
+    </div>
+
+    <!-- VISTA DE REPASO: Estudiar -->
+    <div id="view-review" class="view">
+        <h2>Repaso: <span id="review-topic-name"></span></h2>
+        <div id="feedback-msg"></div>
+        
+        <div id="review-content">
+            <p><strong>Desarrolla el siguiente punto:</strong></p>
+            <h3 id="current-point-title"></h3>
+            <textarea id="review-answer" placeholder="Escribe el contenido exactamente igual..."></textarea>
+            
+            <button onclick="checkAnswer()">Comprobar</button>
+            <button onclick="cancelReview()" class="btn-danger">Salir del repaso</button>
+        </div>
+        
+        <div id="review-finished" style="display: none;">
+            <h3>¡Enhorabuena! Has repasado todos los puntos correctamente.</h3>
+            <button onclick="showView('view-home')">Volver al inicio</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // --- ESTADO DE LA APLICACIÓN ---
+    let topics = JSON.parse(localStorage.getItem('studyTopics')) || [];
+    let reviewQueue = [];
+    let currentPoint = null;
+    let currentTopicId = null;
+    let currentEditingId = null; // null si estamos creando, ID string si estamos editando
+
+    // --- NAVEGACIÓN ---
+    function showView(viewId) {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.getElementById(viewId).classList.add('active');
+        
+        if (viewId === 'view-home') renderTopics();
+    }
+
+    // --- CREACIÓN Y EDICIÓN DE TEMAS ---
+    function showCreateView(id = null) {
+        currentEditingId = id;
+        const titleEl = document.getElementById('create-view-title');
+        const nameInput = document.getElementById('new-topic-name');
+        const container = document.getElementById('points-container');
+        
+        container.innerHTML = '';
+
+        if (id) {
+            // Modo Edición
+            titleEl.innerText = "Modificar Tema";
+            const topic = topics.find(t => t.id === id);
+            nameInput.value = topic.name;
+            topic.points.forEach(p => addPointField(p.title, p.content));
+        } else {
+            // Modo Creación Nueva
+            titleEl.innerText = "Crear Nuevo Tema";
+            nameInput.value = '';
+            addPointField(); // Añade un punto en blanco inicial
+        }
+        
+        showView('view-create');
+    }
+
+    function addPointField(title = '', content = '') {
+        const container = document.getElementById('points-container');
+        const pointDiv = document.createElement('div');
+        pointDiv.className = 'point-container';
+        pointDiv.innerHTML = `
+            <label>Título del Punto:</label>
+            <input type="text" class="point-title" placeholder="Ej. Causas de la Primera Guerra Mundial" value="${escapeHtml(title)}">
+            <label>Apuntes (Contenido exacto a memorizar):</label>
+            <textarea class="point-content" placeholder="Escribe aquí el desarrollo...">${escapeHtml(content)}</textarea>
+            <button onclick="this.parentElement.remove()" class="btn-danger" style="padding: 5px 10px; font-size: 14px;">Eliminar Punto</button>
+        `;
+        container.appendChild(pointDiv);
+    }
+
+    function saveTopic() {
+        const name = document.getElementById('new-topic-name').value.trim();
+        if (!name) return alert('El tema necesita un nombre.');
+
+        const pointNodes = document.querySelectorAll('.point-container');
+        const points = [];
+
+        for (let node of pointNodes) {
+            const title = node.querySelector('.point-title').value.trim();
+            const content = node.querySelector('.point-content').value; 
+            
+            if (title && content) {
+                points.push({ title, content });
+            }
+        }
+
+        if (points.length === 0) return alert('Debes añadir al menos un punto con título y contenido.');
+
+        if (currentEditingId) {
+            // Actualizar tema existente
+            const index = topics.findIndex(t => t.id === currentEditingId);
+            if (index !== -1) {
+                topics[index].name = name;
+                topics[index].points = points;
+            }
+        } else {
+            // Crear nuevo tema
+            const newTopic = {
+                id: Date.now().toString(),
+                name: name,
+                points: points
+            };
+            topics.push(newTopic);
+        }
+
+        localStorage.setItem('studyTopics', JSON.stringify(topics));
+        showView('view-home');
+    }
+
+    // --- RENDERIZADO DE INICIO ---
+    function renderTopics() {
+        const container = document.getElementById('topics-container');
+        container.innerHTML = '';
+
+        if (topics.length === 0) {
+            container.innerHTML = '<p>No hay temas guardados. ¡Crea uno nuevo o importa un archivo!</p>';
+            return;
+        }
+
+        topics.forEach(topic => {
+            const li = document.createElement('li');
+            li.className = 'topic-item';
+            li.innerHTML = `
+                <span><strong>${escapeHtml(topic.name)}</strong> (${topic.points.length} puntos)</span>
+                <div class="topic-actions">
+                    <button onclick="startReview('${topic.id}')">Repasar</button>
+                    <button onclick="showCreateView('${topic.id}')" class="btn-accent">Modificar</button>
+                    <button onclick="deleteTopic('${topic.id}')" class="btn-danger">Borrar</button>
+                </div>
+            `;
+            container.appendChild(li);
+        });
+    }
+
+    function deleteTopic(id) {
+        if (confirm('¿Seguro que quieres borrar este tema?')) {
+            topics = topics.filter(t => t.id !== id);
+            localStorage.setItem('studyTopics', JSON.stringify(topics));
+            renderTopics();
+        }
+    }
+
+    // --- LÓGICA DE REPASO ---
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    }
+
+    function startReview(topicId) {
+        const topic = topics.find(t => t.id === topicId);
+        if (!topic) return;
+
+        currentTopicId = topicId;
+        document.getElementById('review-topic-name').innerText = topic.name;
+        
+        reviewQueue = [...topic.points];
+        shuffleArray(reviewQueue);
+
+        document.getElementById('review-content').style.display = 'block';
+        document.getElementById('review-finished').style.display = 'none';
+        document.getElementById('feedback-msg').style.display = 'none';
+        
+        showView('view-review');
+        loadNextPoint();
+    }
+
+    function loadNextPoint() {
+        if (reviewQueue.length === 0) {
+            document.getElementById('review-content').style.display = 'none';
+            document.getElementById('review-finished').style.display = 'block';
+            return;
+        }
+
+        currentPoint = reviewQueue[0];
+        document.getElementById('current-point-title').innerText = currentPoint.title;
+        document.getElementById('review-answer').value = '';
+    }
+
+    function checkAnswer() {
+        const userAnswer = document.getElementById('review-answer').value;
+        const feedback = document.getElementById('feedback-msg');
+        
+        if (userAnswer === currentPoint.content) {
+            reviewQueue.shift(); 
+            feedback.textContent = '¡Correcto!';
+            feedback.className = 'correct';
+            feedback.style.display = 'block';
+        } else {
+            const failedPoint = reviewQueue.shift();
+            reviewQueue.push(failedPoint);
+            feedback.textContent = 'Incorrecto. Tendrás que repetirlo más tarde.';
+            feedback.className = 'incorrect';
+            feedback.style.display = 'block';
+        }
+
+        setTimeout(() => {
+            feedback.style.display = 'none';
+            loadNextPoint();
+        }, 1500);
+    }
+
+    function cancelReview() {
+        if (confirm('¿Seguro que quieres salir del repaso? El progreso actual se perderá.')) {
+            showView('view-home');
+        }
+    }
+
+    // --- FUNCIONALIDAD DE EXPORTAR E IMPORTAR (SINCRONIZACIÓN LOCAL-FIRST) ---
+    function exportData() {
+        if (topics.length === 0) return alert('No tienes temas para exportar.');
+        
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(topics));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", "mis_temas_estudio.json");
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+    }
+
+    function importData(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const importedTopics = JSON.parse(e.target.result);
+                if (Array.isArray(importedTopics)) {
+                    const mode = confirm("¿Deseas COMBINAR los temas importados con los que ya tienes?\n\n[Aceptar] = Combinar sin borrar\n[Cancelar] = Reemplazar todo lo actual");
+                    
+                    if (mode) {
+                        // Combinar sin duplicar IDs exactos
+                        const existingIds = new Set(topics.map(t => t.id));
+                        importedTopics.forEach(t => {
+                            if (!existingIds.has(t.id)) {
+                                topics.push(t);
+                            } else {
+                                // Si el ID existe, le damos uno nuevo para que coexistan
+                                t.id = Date.now().toString() + Math.random().toString(36).substr(2, 5);
+                                topics.push(t);
+                            }
+                        });
+                    } else {
+                        // Reemplazar por completo
+                        topics = importedTopics;
+                    }
+
+                    localStorage.setItem('studyTopics', JSON.stringify(topics));
+                    renderTopics();
+                    alert("¡Temas importados correctamente!");
+                } else {
+                    alert("El archivo no tiene un formato válido de temas.");
+                }
+            } catch (err) {
+                alert("Error al leer el archivo JSON. Asegúrate de que no esté corrupto.");
+            }
+            // Resetear el input file para permitir volver a cargar el mismo archivo
+            event.target.value = '';
+        };
+        reader.readAsText(file);
+    }
+
+    // Helper para evitar problemas con comillas o caracteres HTML al renderizar/editar
+    function escapeHtml(text) {
+        return text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    // Inicializar app
+    renderTopics();
+</script>
+</body>
+</html>
