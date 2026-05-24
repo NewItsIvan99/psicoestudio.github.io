@@ -4,7 +4,7 @@
     <link rel="icon" href="images.png" type="image/x-icon">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PsicoStudio</title>
+    <title>App de Estudio Profesional - Repaso Exacto</title>
     <style>
         :root {
             --primary: #4F46E5;
@@ -19,7 +19,6 @@
             --muted: #6B7280;
         }
 
-        /* Variables para el Modo Oscuro */
         body.dark-theme {
             --bg: #111827;
             --card-bg: #1F2937;
@@ -85,11 +84,9 @@
 
         textarea { resize: vertical; min-height: 100px; }
 
-        /* Vistas */
         .view { display: none; }
         .view.active { display: block; }
 
-        /* Buscador e inicio */
         .header-actions {
             display: flex;
             justify-content: space-between;
@@ -102,7 +99,6 @@
             margin-bottom: 15px;
         }
 
-        /* Lista de Temas */
         .topic-list { list-style: none; padding: 0; }
         .topic-item {
             display: flex;
@@ -115,7 +111,6 @@
         }
         .topic-actions button { margin-left: 5px; }
 
-        /* Formularios e Imágenes */
         .point-container {
             border: 1px solid var(--border);
             padding: 15px;
@@ -146,7 +141,6 @@
             object-fit: contain;
         }
 
-        /* Repaso y Corrección */
         #feedback-msg {
             font-weight: bold;
             margin-bottom: 15px;
@@ -168,7 +162,6 @@
             display: none;
         }
 
-        /* Configuración e Importación masiva */
         .setting-group {
             margin-bottom: 20px;
             padding-bottom: 15px;
@@ -179,9 +172,11 @@
             font-weight: bold;
             margin-bottom: 5px;
         }
+        
+        /* Contenedor adaptativo de 3 columnas para sincronización */
         .sync-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
             gap: 15px;
             margin-top: 20px;
         }
@@ -190,6 +185,9 @@
             padding: 15px;
             border-radius: 8px;
             background-color: rgba(0,0,0,0.01);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
         .file-wrapper {
             position: relative;
@@ -221,15 +219,32 @@
         <hr>
         <ul id="topics-container" class="topic-list"></ul>
 
+        <h3>Sincronización y Datos</h3>
         <div class="sync-grid">
             <div class="sync-card">
-                <h4>Exportación completa</h4>
-                <p style="font-size:13px; margin-bottom:10px;">Descarga todos tus temas juntos en una sola copia de seguridad.</p>
+                <div>
+                    <h4>Exportación Completa</h4>
+                    <p style="font-size:13px; margin-bottom:10px;">Descarga todos tus temas juntos en una sola copia de seguridad.</p>
+                </div>
                 <button onclick="exportAllData()" class="btn-secondary" style="width:100%;">⬇️ Exportar Todo (JSON)</button>
             </div>
+            
             <div class="sync-card">
-                <h4>Importación masiva</h4>
-                <p style="font-size:13px; margin-bottom:10px;">Selecciona una carpeta entera del ordenador para importar todos sus archivos JSON.</p>
+                <div>
+                    <h4>Importar Archivo Único</h4>
+                    <p style="font-size:13px; margin-bottom:10px;">Selecciona un único archivo <code>.json</code> para añadirlo a tu biblioteca.</p>
+                </div>
+                <div class="file-wrapper">
+                    <button class="btn-secondary" style="width:100%;">📄 Cargar Fichero JSON</button>
+                    <input type="file" id="import-single-file" accept=".json" onchange="importSingleFile(event)">
+                </div>
+            </div>
+
+            <div class="sync-card">
+                <div>
+                    <h4>Importación Masiva</h4>
+                    <p style="font-size:13px; margin-bottom:10px;">Selecciona una carpeta del sistema para importar todos sus JSON simultáneamente.</p>
+                </div>
                 <div class="file-wrapper">
                     <button class="btn-secondary" style="width:100%;">📁 Cargar Carpeta JSON</button>
                     <input type="file" id="import-folder" webkitdirectory directory multiple onchange="importFolder(event)">
@@ -325,21 +340,10 @@
                 <option value="all">A todos los temas globales</option>
                 <option value="custom">Elegir de forma manual en cada tema</option>
             </select>
-            <p style="font-size:12px; margin: 4px 0 0 0;">*Nota: Si se activa cualquiera de estas opciones y escribes con tildes/puntuación correctas, el sistema las validará como válidas siempre que las palabras coincidan.</p>
         </div>
 
         <div class="setting-group">
             <label><input type="checkbox" id="setting-show-correction"> Mostrar respuesta correcta en caso de fallo (En lugar de saltar rápido)</label>
-        </div>
-
-        <div class="setting-group">
-            <label>Estrategia de Ruta de Descarga al Exportar:</label>
-            <p style="font-size:13px; margin-bottom:8px;">
-                Por motivos de seguridad informática, los navegadores web prohíben que el código de una página acceda de manera automática a rutas nativas de tu disco duro (ej. <code>C:/MisApuntes</code>) para evitar virus de sobreescritura. 
-            </p>
-            <p style="font-size:13px; font-weight: bold; color: var(--accent);">
-                💡 Solución Integrada: Al pulsar exportar, la aplicación abrirá una ventana nativa de tu sistema operativo ("Guardar Como") permitiéndote elegir la carpeta exacta en tu dispositivo.
-            </p>
         </div>
 
         <button onclick="saveSettings()">Guardar Ajustes</button>
@@ -349,7 +353,7 @@
 </div>
 
 <script>
-    // --- PERSISTENCIA AVANZADA CON INDEXEDDB ---
+    // --- PERSISTENCIA CON INDEXEDDB ---
     let db;
     let topics = [];
     let settings = {
@@ -359,7 +363,6 @@
         showCorrection: true
     };
 
-    // Inicializar base de datos del navegador
     function initIndexedDB() {
         return new Promise((resolve, reject) => {
             const request = indexedDB.open("StudyAppProfessionalDB", 1);
@@ -380,22 +383,16 @@
             };
 
             request.onerror = function(e) {
-                console.error("Error cargando IndexedDB", e);
                 reject();
             };
         });
     }
 
-    // Funciones utilitarias de Base de datos
     function dbLoadAll() {
         return new Promise((resolve) => {
             const transaction = db.transaction(["topics", "settings"], "readonly");
-            
-            // Cargar Temas
             const topicsStore = transaction.objectStore("topics");
             const topicsRequest = topicsStore.getAll();
-            
-            // Cargar Ajustes
             const settingsStore = transaction.objectStore("settings");
             const settingsRequest = settingsStore.get("global");
 
@@ -404,9 +401,7 @@
             };
 
             settingsRequest.onsuccess = function() {
-                if (settingsRequest.result) {
-                    settings = settingsRequest.result.value;
-                }
+                if (settingsRequest.result) settings = settingsRequest.result.value;
             };
 
             transaction.oncomplete = function() {
@@ -416,27 +411,22 @@
     }
 
     function dbSaveTopic(topic) {
-        const transaction = db.transaction(["topics"], "readwrite");
-        transaction.objectStore("topics").put(topic);
+        db.transaction(["topics"], "readwrite").objectStore("topics").put(topic);
     }
 
     function dbDeleteTopic(id) {
-        const transaction = db.transaction(["topics"], "readwrite");
-        transaction.objectStore("topics").delete(id);
+        db.transaction(["topics"], "readwrite").objectStore("topics").delete(id);
     }
 
     function dbSaveSettings() {
-        const transaction = db.transaction(["settings"], "readwrite");
-        transaction.objectStore("settings").put({ id: "global", value: settings });
+        db.transaction(["settings"], "readwrite").objectStore("settings").put({ id: "global", value: settings });
     }
 
-    // --- ESTADO INTERNO DEL REPASO ---
     let reviewQueue = [];
     let currentPoint = null;
     let currentTopicId = null;
     let currentEditingId = null;
 
-    // --- ARRANQUE DE LA APP ---
     window.onload = async function() {
         try {
             await initIndexedDB();
@@ -444,11 +434,10 @@
             applySettingsUI();
             renderTopics();
         } catch (e) {
-            alert("No se pudo iniciar el almacén local IndexedDB. Los cambios no se guardarán de manera permanente.");
+            alert("Error al cargar IndexedDB.");
         }
     };
 
-    // --- AJUSTES Y CONFIGURACIÓN ---
     function applySettingsUI() {
         document.getElementById('setting-dark-mode').checked = settings.darkMode;
         toggleDarkMode(settings.darkMode);
@@ -467,24 +456,19 @@
         settings.punctuationScope = document.getElementById('setting-punctuation-scope').value;
         settings.advancedScope = document.getElementById('setting-advanced-scope').value;
         settings.showCorrection = document.getElementById('setting-show-correction').checked;
-        
         dbSaveSettings();
-        alert("Configuración guardada correctamente.");
         showView('view-home');
     }
 
-    // --- NAVEGACIÓN ---
     function showView(viewId) {
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
         document.getElementById(viewId).classList.add('active');
         if (viewId === 'view-home') renderTopics();
     }
 
-    // --- PREVISUALIZACIÓN DE IMÁGENES (Conversión a Base64 automática para portabilidad) ---
     function previewImage(inputElement, imgElementId) {
         const file = inputElement.files[0];
         const preview = document.getElementById(imgElementId);
-        
         if (file) {
             const reader = new FileReader();
             reader.onload = function(e) {
@@ -498,23 +482,6 @@
         }
     }
 
-    function previewPointImage(inputElement) {
-        const file = inputElement.files[0];
-        const preview = inputElement.parentElement.querySelector('.img-preview');
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                preview.src = e.target.result;
-                preview.style.display = 'block';
-            }
-            reader.readAsDataURL(file);
-        } else {
-            preview.src = '';
-            preview.style.display = 'none';
-        }
-    }
-
-    // --- GESTIÓN DE CREACIÓN Y EDICIÓN ---
     function showCreateView(id = null) {
         currentEditingId = id;
         const container = document.getElementById('points-container');
@@ -522,24 +489,18 @@
         container.innerHTML = '';
         headerPreview.src = '';
         headerPreview.style.display = 'none';
-        
-        // Limpiar inputs de ficheros
         document.querySelector('.image-uploader input[type="file"]').value = '';
 
         if (id) {
             document.getElementById('create-view-title').innerText = "Modificar Tema";
             const topic = topics.find(t => t.id === id);
             document.getElementById('new-topic-name').value = topic.name;
-            
             if(topic.image) {
                 headerPreview.src = topic.image;
                 headerPreview.style.display = 'block';
             }
-
-            // Cargar reglas locales del objeto tema
             document.getElementById('local-ignore-punctuation').checked = topic.localIgnorePunctuation || false;
             document.getElementById('local-ignore-advanced').checked = topic.localIgnoreAdvanced || false;
-
             topic.points.forEach(p => addPointField(p.title, p.content, p.image));
         } else {
             document.getElementById('create-view-title').innerText = "Crear Nuevo Tema";
@@ -555,21 +516,18 @@
         const container = document.getElementById('points-container');
         const pointDiv = document.createElement('div');
         pointDiv.className = 'point-container';
-        
         const uniqueId = "img-" + Date.now() + "-" + Math.random().toString(36).substr(2, 4);
 
         pointDiv.innerHTML = `
             <label>Título del Punto:</label>
-            <input type="text" class="point-title" placeholder="Ej. Síntomas principales" value="${escapeHtml(title)}">
+            <input type="text" class="point-title" placeholder="Ej. Características principales" value="${escapeHtml(title)}">
             <label>Apuntes (Contenido exacto a memorizar):</label>
             <textarea class="point-content" placeholder="Escribe aquí el desarrollo exacto...">${escapeHtml(content)}</textarea>
-            
             <div class="image-uploader">
-                <label>Imagen para este punto específico (Opcional):</label>
+                <label>Imagen para este punto (Opcional):</label>
                 <input type="file" accept="image/*" onchange="previewImage(this, '${uniqueId}')">
                 <img id="${uniqueId}" class="img-preview" src="${imgBase64 || ''}" style="${imgBase64 ? 'display:block;' : 'display:none;'}" alt="Vista previa de punto">
             </div>
-
             <button onclick="this.parentElement.remove()" class="btn-danger" style="padding: 5px 10px; font-size: 13px; margin-top:5px;">Eliminar Punto</button>
         `;
         container.appendChild(pointDiv);
@@ -577,7 +535,7 @@
 
     function saveTopic() {
         const name = document.getElementById('new-topic-name').value.trim();
-        if (!name) return alert('El tema necesita un nombre identificativo.');
+        if (!name) return alert('El tema necesita un nombre.');
 
         const pointNodes = document.querySelectorAll('.point-container');
         const points = [];
@@ -593,7 +551,7 @@
             }
         }
 
-        if (points.length === 0) return alert('Debes rellenar al menos un punto completo.');
+        if (points.length === 0) return alert('Debes rellenar al menos un punto.');
 
         const headerImgEl = document.getElementById('topic-header-preview');
         const topicImgBase64 = headerImgEl.src.startsWith('data:image') ? headerImgEl.src : '';
@@ -618,18 +576,14 @@
         showView('view-home');
     }
 
-    // --- RENDIMIENTO DE LA LISTA DE TEMAS (CON BUSCADOR) ---
     function renderTopics() {
         const container = document.getElementById('topics-container');
         container.innerHTML = '';
-        
         const searchQuery = document.getElementById('search-input').value.toLowerCase().trim();
-        
-        // Filtrar según el buscador
         const filteredTopics = topics.filter(t => t.name.toLowerCase().includes(searchQuery));
 
         if (filteredTopics.length === 0) {
-            container.innerHTML = searchQuery ? '<p>No se encontraron temas que coincidan con la búsqueda.</p>' : '<p>No hay temas guardados. ¡Crea uno nuevo!</p>';
+            container.innerHTML = '<p>No se encontraron temas.</p>';
             return;
         }
 
@@ -641,7 +595,7 @@
                 <div class="topic-actions">
                     <button onclick="startReview('${topic.id}')">Repasar</button>
                     <button onclick="showCreateView('${topic.id}')" class="btn-accent">Modificar</button>
-                    <button onclick="triggerSmartExport('${topic.id}')" class="btn-secondary" title="Exportar este tema">⬇️</button>
+                    <button onclick="triggerSmartExport('${topic.id}')" class="btn-secondary" title="Exportar tema">⬇️</button>
                     <button onclick="deleteTopic('${topic.id}')" class="btn-danger">Borrar</button>
                 </div>
             `;
@@ -650,33 +604,27 @@
     }
 
     function deleteTopic(id) {
-        if (confirm('¿Seguro que quieres borrar este tema de la base de datos de manera irreversible?')) {
+        if (confirm('¿Borrar este tema de forma permanente?')) {
             topics = topics.filter(t => t.id !== id);
             dbDeleteTopic(id);
             renderTopics();
         }
     }
 
-    // --- ALGORITMOS DE NORMALIZACIÓN / LIMPIEZA ORTOGRÁFICA ---
+    // --- NORMALIZACIÓN ORTOGRÁFICA ---
     function cleanPunctuation(str) {
-        // Elimina los signos de puntuación comunes manteniendo letras, números, espacios y acentos
         return str.replace(/[\u2000-\u206F\u2E00-\u2E7F\\'!"#$%&()*+,\-.\/:;<=>?@\[\]^_`{|}~¡¿]/g, " ").replace(/\s+/g, " ").trim();
     }
 
     function cleanAdvanced(str) {
-        // Convierte a minúsculas
         let clean = str.toLowerCase();
-        // Quita tildes, diéresis y normaliza caracteres extraños
         clean = clean.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        // Quita signos de puntuación
         return cleanPunctuation(clean);
     }
 
     function getTopicRules(topic) {
-        // Evaluar las cascadas de las prioridades de configuración (Global vs Local)
         let activePunctuation = false;
         let activeAdvanced = false;
-
         if (settings.punctuationScope === 'all') activePunctuation = true;
         else if (settings.punctuationScope === 'custom' && topic.localIgnorePunctuation) activePunctuation = true;
 
@@ -686,7 +634,7 @@
         return { activePunctuation, activeAdvanced };
     }
 
-    // --- SISTEMA DE CONTROL DE REPASO ---
+    // --- REPASO ---
     function startReview(topicId) {
         const topic = topics.find(t => t.id === topicId);
         if (!topic) return;
@@ -703,7 +651,6 @@
         }
 
         reviewQueue = [...topic.points];
-        // Algoritmo de barajado aleatorio
         for (let i = reviewQueue.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [reviewQueue[i], reviewQueue[j]] = [reviewQueue[j], reviewQueue[i]];
@@ -746,23 +693,19 @@
         const userAnswer = document.getElementById('review-answer').value;
         const feedback = document.getElementById('feedback-msg');
         const topic = topics.find(t => t.id === currentTopicId);
-        
         const rules = getTopicRules(topic);
-        
         let isCorrect = false;
 
-        // Evaluación inteligente según configuración activa
         if (rules.activeAdvanced) {
             isCorrect = (cleanAdvanced(userAnswer) === cleanAdvanced(currentPoint.content));
         } else if (rules.activePunctuation) {
             isCorrect = (cleanPunctuation(userAnswer) === cleanPunctuation(currentPoint.content));
         } else {
-            // Estricta 100% igual
             isCorrect = (userAnswer === currentPoint.content);
         }
 
         if (isCorrect) {
-            reviewQueue.shift(); // Eliminar de la cola de pendientes
+            reviewQueue.shift();
             feedback.textContent = '¡Respuesta Correcta!';
             feedback.className = 'correct';
             feedback.style.display = 'block';
@@ -772,7 +715,6 @@
                 loadNextPoint();
             }, 1200);
         } else {
-            // Fallo catastrófico: Pasar al final de la lista para re-preguntar luego
             const failedPoint = reviewQueue.shift();
             reviewQueue.push(failedPoint);
 
@@ -781,13 +723,11 @@
             feedback.style.display = 'block';
 
             if (settings.showCorrection) {
-                // Detener el bucle y forzar visualización del texto correcto
                 document.getElementById('review-answer').disabled = true;
                 document.getElementById('action-buttons-review').style.display = 'none';
                 document.getElementById('correct-answer-text').innerText = currentPoint.content;
                 document.getElementById('correction-box').style.display = 'block';
             } else {
-                // Comportamiento directo antiguo
                 setTimeout(() => {
                     feedback.style.display = 'none';
                     loadNextPoint();
@@ -802,57 +742,28 @@
     }
 
     function cancelReview() {
-        if (confirm('¿Abandonar sesión de estudio? Se perderá el avance actual de esta ronda.')) {
-            showView('view-home');
-        }
+        if (confirm('¿Abandonar sesión de estudio?')) showView('view-home');
     }
 
-    // --- CONTROL DE EXPORTACIONES INTELIGENTES (CON VENTANA "GUARDAR COMO") ---
+    // --- EXPORTACIONES ---
     async function triggerSmartExport(topicId) {
         const topic = topics.find(t => t.id === topicId);
         if (!topic) return;
-        
         const cleanName = topic.name.replace(/[^a-z0-9áéíóúñü_ -\s]/gi, '');
-        const filename = `${cleanName}.json`;
-        const jsonContent = JSON.stringify(topic, null, 2);
-
-        // Intentar usar File System Access API para dar administración completa de la ruta
-        if ('showSaveFilePicker' in window) {
-            try {
-                const handle = await window.showSaveFilePicker({
-                    suggestedName: filename,
-                    types: [{
-                        description: 'Archivo de Tema de Estudio JSON',
-                        accept: {'application/json': ['.json']},
-                    }],
-                });
-                const writable = await handle.createWritable();
-                await writable.write(jsonContent);
-                await writable.close();
-                return; // Guardado exitoso mediante selector avanzado de ruta
-            } catch (err) {
-                if (err.name === 'AbortError') return; // Cancelado por el usuario voluntariamente
-                console.warn("Fallo showSaveFilePicker, procediendo con descarga tradicional nativa.", err);
-            }
-        }
-
-        // Caída tradicional si el navegador es antiguo o no soporta HTTPS/seguridad estricta
-        executeClassicDownload(jsonContent, filename);
+        executeSmartSave(JSON.stringify(topic, null, 2), `${cleanName}.json`);
     }
 
     async function exportAllData() {
         if (topics.length === 0) return alert('No hay temas que exportar.');
-        const jsonContent = JSON.stringify(topics, null, 2);
-        const filename = `copia_completa_estudio_${Date.now()}.json`;
+        executeSmartSave(JSON.stringify(topics, null, 2), `copia_completa_estudio_${Date.now()}.json`);
+    }
 
+    async function executeSmartSave(jsonContent, filename) {
         if ('showSaveFilePicker' in window) {
             try {
                 const handle = await window.showSaveFilePicker({
                     suggestedName: filename,
-                    types: [{
-                        description: 'Copia Completa de Temas JSON',
-                        accept: {'application/json': ['.json']},
-                    }],
+                    types: [{ description: 'JSON File', accept: {'application/json': ['.json']} }],
                 });
                 const writable = await handle.createWritable();
                 await writable.write(jsonContent);
@@ -862,39 +773,66 @@
                 if (err.name === 'AbortError') return;
             }
         }
-        executeClassicDownload(jsonContent, filename);
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(jsonContent);
+        const dlAnchor = document.createElement('a');
+        dlAnchor.setAttribute("href", dataStr);
+        dlAnchor.setAttribute("download", filename);
+        document.body.appendChild(dlAnchor);
+        dlAnchor.click();
+        dlAnchor.remove();
     }
 
-    function executeClassicDownload(content, filename) {
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(content);
-        const downloadAnchor = document.createElement('a');
-        downloadAnchor.setAttribute("href", dataStr);
-        downloadAnchor.setAttribute("download", filename);
-        document.body.appendChild(downloadAnchor);
-        downloadAnchor.click();
-        downloadAnchor.remove();
+    // --- NUEVA FUNCIÓN: IMPORTACIÓN DE ARCHIVO ÚNICO ---
+    function importSingleFile(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const importedContent = JSON.parse(e.target.result);
+                const mergeMode = confirm("¿Deseas COMBINAR el archivo cargado con tu base de datos actual?\n\n[Aceptar] = Combinar manteniendo tus temas actuales\n[Cancelar] = Limpiar base de datos y dejar SOLO este archivo");
+                
+                if (!mergeMode) {
+                    topics = [];
+                    db.transaction(["topics"], "readwrite").objectStore("topics").clear();
+                }
+
+                let importedCount = 0;
+                if (Array.isArray(importedContent)) {
+                    importedContent.forEach(t => {
+                        if (validateTopicFormat(t)) { insertImportedTopic(t); importedCount++; }
+                    });
+                } else if (typeof importedContent === 'object' && importedContent !== null) {
+                    if (validateTopicFormat(importedContent)) { insertImportedTopic(importedContent); importedCount++; }
+                }
+
+                renderTopics();
+                alert(`Importación exitosa. Se incorporaron ${importedCount} temas.`);
+            } catch (err) {
+                alert("Error al procesar el archivo JSON.");
+            }
+            event.target.value = '';
+        };
+        reader.readAsText(file);
     }
 
-    // --- CARGAR CARPETAS ENTERAS DE ARCHIVOS JSON ---
+    // --- IMPORTACIÓN MASIVA DE CARPETAS ---
     function importFolder(event) {
         const files = event.target.files;
         if (!files || files.length === 0) return;
 
         let processedFilesCount = 0;
         let validTopicsImported = 0;
-
-        const mergeMode = confirm("¿Deseas COMBINAR las carpetas cargadas con tu base de datos actual?\n\n[Aceptar] = Combinar todo manteniendo apuntes actuales\n[Cancelar] = Purgar base de datos y dejar solo la carpeta nueva");
+        const mergeMode = confirm("¿Deseas COMBINAR la carpeta cargada con tu base de datos actual?\n\n[Aceptar] = Combinar manteniendo temas\n[Cancelar] = Reemplazar base de datos por completo");
         
         if (!mergeMode) {
             topics = [];
-            const transaction = db.transaction(["topics"], "readwrite");
-            transaction.objectStore("topics").clear();
+            db.transaction(["topics"], "readwrite").objectStore("topics").clear();
         }
 
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
-            
-            // Ignorar archivos que no sean estrictamente JSON (Mac/Windows metadatos ocultos)
             if (!file.name.endsWith('.json')) {
                 processedFilesCount++;
                 continue;
@@ -904,27 +842,18 @@
             reader.onload = function(e) {
                 try {
                     const importedContent = JSON.parse(e.target.result);
-                    
-                    // Puede ser un solo objeto Tema o una lista de Temas
                     if (Array.isArray(importedContent)) {
-                        importedContent.forEach(t => { if(validateTopicFormat(t)) insertImportedTopic(t); validTopicsImported++; });
+                        importedContent.forEach(t => { if(validateTopicFormat(t)) { insertImportedTopic(t); validTopicsImported++; } });
                     } else if (typeof importedContent === 'object' && importedContent !== null) {
-                        if(validateTopicFormat(importedContent)) {
-                            insertImportedTopic(importedContent);
-                            validTopicsImported++;
-                        }
+                        if(validateTopicFormat(importedContent)) { insertImportedTopic(importedContent); validTopicsImported++; }
                     }
-                } catch(err) {
-                    console.error("Error interpretando JSON individual de carpeta: " + file.name);
-                }
+                } catch(err) {}
 
                 processedFilesCount++;
-                // Cuando todos los hilos FileReader asíncronos terminen
                 if (processedFilesCount === files.length) {
-                    localStorage.setItem('studyTopics', JSON.stringify(topics)); // Retrocompatibilidad limpia
                     renderTopics();
-                    alert(`Proceso Terminado.\nSe han incorporado con éxito ${validTopicsImported} temas desde la carpeta.`);
-                    event.target.value = ''; // Resetear control
+                    alert(`Proceso Terminado.\nSe han incorporado ${validTopicsImported} temas desde la carpeta.`);
+                    event.target.value = '';
                 }
             };
             reader.readAsText(file);
@@ -936,23 +865,15 @@
     }
 
     function insertImportedTopic(topic) {
-        // Evitar pisar llaves primarias idénticas rompiendo el estado de IndexedDB
         const targetId = topics.some(t => t.id === topic.id) ? Date.now().toString() + Math.random().toString(36).substr(2, 4) : topic.id;
         topic.id = targetId;
-        
         topics.push(topic);
         dbSaveTopic(topic);
     }
 
-    // Helper para formatear cadenas e impedir inyecciones de código HTML maliciosas en inputs
     function escapeHtml(text) {
         if(!text) return '';
-        return text
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
+        return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
     }
 </script>
 </body>
