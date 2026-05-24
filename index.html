@@ -4,7 +4,7 @@
     <link rel="icon" href="images.png" type="image/x-icon">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PsicoEstudio</title>
+    <title>App de Estudio Profesional - Repaso Exacto</title>
     <style>
         :root {
             --primary: #4F46E5;
@@ -16,6 +16,16 @@
             --success: #10B981;
             --error: #EF4444;
             --accent: #F59E0B;
+            --muted: #6B7280;
+        }
+
+        /* Variables para el Modo Oscuro */
+        body.dark-theme {
+            --bg: #111827;
+            --card-bg: #1F2937;
+            --text: #F9FAFB;
+            --border: #374151;
+            --muted: #9CA3AF;
         }
 
         body {
@@ -26,18 +36,20 @@
             padding: 20px;
             display: flex;
             justify-content: center;
+            transition: background 0.3s, color 0.3s;
         }
 
         .container {
             width: 100%;
-            max-width: 800px;
+            max-width: 850px;
             background-color: var(--card-bg);
             padding: 30px;
             border-radius: 10px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
 
-        h1, h2, h3 { margin-top: 0; }
+        h1, h2, h3, h4 { margin-top: 0; }
+        p { color: var(--muted); }
         
         button {
             background-color: var(--primary);
@@ -46,7 +58,8 @@
             padding: 10px 20px;
             border-radius: 5px;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 15px;
+            font-weight: 500;
             transition: background 0.2s;
         }
 
@@ -58,7 +71,7 @@
         .btn-accent { background-color: var(--accent); }
         .btn-accent:hover { background-color: #D97706; }
 
-        input[type="text"], textarea {
+        input[type="text"], textarea, select {
             width: 100%;
             padding: 10px;
             margin: 8px 0 16px 0;
@@ -66,6 +79,8 @@
             border-radius: 5px;
             box-sizing: border-box;
             font-family: inherit;
+            background-color: var(--card-bg);
+            color: var(--text);
         }
 
         textarea { resize: vertical; min-height: 100px; }
@@ -73,6 +88,19 @@
         /* Vistas */
         .view { display: none; }
         .view.active { display: block; }
+
+        /* Buscador e inicio */
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .search-box {
+            width: 100%;
+            margin-bottom: 15px;
+        }
 
         /* Lista de Temas */
         .topic-list { list-style: none; padding: 0; }
@@ -85,54 +113,92 @@
             border-radius: 5px;
             margin-bottom: 10px;
         }
-
         .topic-actions button { margin-left: 5px; }
 
-        /* Formulario de puntos */
+        /* Formularios e Imágenes */
         .point-container {
             border: 1px solid var(--border);
             padding: 15px;
             border-radius: 5px;
             margin-bottom: 15px;
-            background-color: #F9FAFB;
+            background-color: rgba(0,0,0,0.02);
+        }
+        .image-uploader {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px dashed var(--border);
+            border-radius: 5px;
+        }
+        .img-preview {
+            max-width: 150px;
+            max-height: 150px;
+            margin-top: 10px;
+            border-radius: 5px;
+            display: none;
+            object-fit: cover;
+        }
+        .img-review-display {
+            max-width: 100%;
+            max-height: 300px;
+            margin: 15px 0;
+            border-radius: 8px;
+            display: none;
+            object-fit: contain;
         }
 
-        /* Repaso */
+        /* Repaso y Corrección */
         #feedback-msg {
             font-weight: bold;
             margin-bottom: 15px;
-            padding: 10px;
+            padding: 15px;
             border-radius: 5px;
             display: none;
         }
-        .correct { background-color: #D1FAE5; color: var(--success); }
-        .incorrect { background-color: #FEE2E2; color: var(--error); }
+        .correct { background-color: #D1FAE5; color: #047857; }
+        body.dark-theme .correct { background-color: #064E3B; color: #A7F3D0; }
+        .incorrect { background-color: #FEE2E2; color: #B91C1C; }
+        body.dark-theme .incorrect { background-color: #7F1D1D; color: #FCA5A5; }
 
-        /* Sección Sincronización / Copia de seguridad */
-        .sync-section {
-            background-color: #F3F4F6;
+        #correction-box {
+            background-color: rgba(0,0,0,0.04);
+            border-left: 4px solid var(--accent);
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 0 5px 5px 0;
+            display: none;
+        }
+
+        /* Configuración e Importación masiva */
+        .setting-group {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+        .setting-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .sync-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .sync-card {
+            border: 1px dashed var(--border);
             padding: 15px;
             border-radius: 8px;
-            margin-top: 30px;
-            border: 1px dashed #9CA3AF;
+            background-color: rgba(0,0,0,0.01);
         }
-        .sync-buttons {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
-        .file-input-wrapper {
+        .file-wrapper {
             position: relative;
             overflow: hidden;
             display: inline-block;
+            width: 100%;
         }
-        .file-input-wrapper input[type=file] {
-            font-size: 100px;
-            position: absolute;
-            left: 0;
-            top: 0;
-            opacity: 0;
-            cursor: pointer;
+        .file-wrapper input[type=file] {
+            position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
         }
 
         hr { border: 0; border-top: 1px solid var(--border); margin: 20px 0; }
@@ -142,174 +208,432 @@
 
 <div class="container">
     
-    <!-- VISTA PRINCIPAL: Lista de Temas -->
     <div id="view-home" class="view active">
         <h1>Mis Temas de Estudio</h1>
-        <button onclick="showCreateView()">+ Crear Nuevo Tema</button>
-        <hr>
-        <ul id="topics-container" class="topic-list">
-            <!-- Los temas se inyectarán aquí por JS -->
-        </ul>
+        
+        <div class="header-actions">
+            <button onclick="showCreateView()">+ Crear Nuevo Tema</button>
+            <button onclick="showView('view-settings')" class="btn-secondary">⚙️ Configuración</button>
+        </div>
 
-        <!-- Sección de Sincronización Alternativa (Exportar/Importar) -->
-        <div class="sync-section">
-            <h3>Sincronización y Copias de Seguridad</h3>
-            <p style="font-size: 14px; color: #4B5563; margin: 0 0 10px 0;">
-                Como esta aplicación se ejecuta desde tu archivo local, puedes llevar tus temas a otro dispositivo exportando tus datos en un archivo e importándolo en el otro dispositivo.
-            </p>
-            <div class="sync-buttons">
-                <button onclick="exportData()" class="btn-secondary">⬇️ Exportar Temas (JSON)</button>
-                <div class="file-input-wrapper">
-                    <button class="btn-secondary">⬆️ Importar Temas (JSON)</button>
-                    <input type="file" id="import-file" accept=".json" onchange="importData(event)">
+        <input type="text" id="search-input" class="search-box" placeholder="🔍 Buscar temas por nombre..." oninput="renderTopics()">
+
+        <hr>
+        <ul id="topics-container" class="topic-list"></ul>
+
+        <div class="sync-grid">
+            <div class="sync-card">
+                <h4>Exportación completa</h4>
+                <p style="font-size:13px; margin-bottom:10px;">Descarga todos tus temas juntos en una sola copia de seguridad.</p>
+                <button onclick="exportAllData()" class="btn-secondary" style="width:100%;">⬇️ Exportar Todo (JSON)</button>
+            </div>
+            <div class="sync-card">
+                <h4>Importación masiva</h4>
+                <p style="font-size:13px; margin-bottom:10px;">Selecciona una carpeta entera del ordenador para importar todos sus archivos JSON.</p>
+                <div class="file-wrapper">
+                    <button class="btn-secondary" style="width:100%;">📁 Cargar Carpeta JSON</button>
+                    <input type="file" id="import-folder" webkitdirectory directory multiple onchange="importFolder(event)">
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- VISTA DE CREACIÓN / EDICIÓN: Añadir o Modificar Tema -->
     <div id="view-create" class="view">
         <h2 id="create-view-title">Crear Nuevo Tema</h2>
-        <label>Nombre del Tema:</label>
-        <input type="text" id="new-topic-name" placeholder="Ej. Historia de España">
         
-        <div id="points-container">
-            <!-- Los puntos de estudio se inyectarán aquí -->
+        <label>Nombre del Tema:</label>
+        <input type="text" id="new-topic-name" placeholder="Ej. Anatomía Humana">
+        
+        <div class="image-uploader">
+            <label>Imagen de portada del Tema (Opcional):</label>
+            <input type="file" accept="image/*" onchange="previewImage(this, 'topic-header-preview')">
+            <img id="topic-header-preview" class="img-preview" alt="Vista previa del tema">
         </div>
 
-        <button onclick="addPointField()" class="btn-secondary">+ Añadir otro punto</button>
+        <div id="local-rules-box" style="border: 1px solid var(--border); padding: 12px; margin-bottom: 15px; border-radius: 5px; background-color: rgba(0,0,0,0.01);">
+            <h4 style="margin-bottom:8px;">⚙️ Reglas de ortografía para este tema:</h4>
+            <label style="font-weight:normal; display:block; margin-bottom:5px;">
+                <input type="checkbox" id="local-ignore-punctuation"> Ignorar signos de puntuación
+            </label>
+            <label style="font-weight:normal; display:block;">
+                <input type="checkbox" id="local-ignore-advanced"> Ignorar avanzado (Puntuación, Mayúsculas y Tildes)
+            </label>
+        </div>
+        
+        <div id="points-container"></div>
+
+        <button onclick="addPointField()" class="btn-secondary" style="margin-bottom: 15px;">+ Añadir otro punto</button>
         <hr>
         <button onclick="saveTopic()">Guardar Tema Completo</button>
         <button onclick="showView('view-home')" class="btn-danger">Cancelar</button>
     </div>
 
-    <!-- VISTA DE REPASO: Estudiar -->
     <div id="view-review" class="view">
         <h2>Repaso: <span id="review-topic-name"></span></h2>
+        
+        <img id="review-topic-img" class="img-review-display" alt="Imagen del Tema">
+
         <div id="feedback-msg"></div>
         
         <div id="review-content">
-            <p><strong>Desarrolla el siguiente punto:</strong></p>
+            <p><strong>Desarrolla el siguiente punto de manera exacta:</strong></p>
             <h3 id="current-point-title"></h3>
-            <textarea id="review-answer" placeholder="Escribe el contenido exactamente igual..."></textarea>
             
-            <button onclick="checkAnswer()">Comprobar</button>
-            <button onclick="cancelReview()" class="btn-danger">Salir del repaso</button>
+            <img id="review-point-img" class="img-review-display" alt="Imagen del Punto">
+
+            <textarea id="review-answer" placeholder="Escribe el desarrollo aquí..."></textarea>
+            
+            <div id="action-buttons-review">
+                <button onclick="checkAnswer()" id="btn-check-answer">Comprobar</button>
+                <button onclick="cancelReview()" class="btn-danger">Salir</button>
+            </div>
+
+            <div id="correction-box">
+                <p style="color:var(--accent); font-weight:bold; margin-bottom:5px;">Respuesta Correcta Esperada:</p>
+                <div id="correct-answer-text" style="white-space: pre-wrap; font-family: monospace; padding: 10px; background: rgba(0,0,0,0.02); border: 1px solid var(--border);"></div>
+                <button onclick="proceedAfterFailure()" style="margin-top:12px;" class="btn-accent">Continuar con el repaso</button>
+            </div>
         </div>
         
         <div id="review-finished" style="display: none;">
-            <h3>¡Enhorabuena! Has repasado todos los puntos correctamente.</h3>
-            <button onclick="showView('view-home')">Volver al inicio</button>
+            <h3>¡Excelente! Has completado todos los puntos con éxito de forma perfecta.</h3>
+            <button onclick="showView('view-home')">Volver al menú de inicio</button>
         </div>
+    </div>
+
+    <div id="view-settings" class="view">
+        <h2>⚙️ Configuración Global</h2>
+        <hr>
+        
+        <div class="setting-group">
+            <label><input type="checkbox" id="setting-dark-mode" onchange="toggleDarkMode(this.checked)"> Activar Modo Oscuro</label>
+        </div>
+
+        <div class="setting-group">
+            <label for="setting-punctuation-scope">Ignorar Ortografía básica (Ignora comas, puntos y signos):</label>
+            <select id="setting-punctuation-scope">
+                <option value="none">A ningún tema (Validación estricta)</option>
+                <option value="all">A todos los temas globales</option>
+                <option value="custom">Elegir de forma manual en cada tema</option>
+            </select>
+        </div>
+
+        <div class="setting-group">
+            <label for="setting-advanced-scope">Ignorar Ortografía Avanzada (Ignora puntuación, mayúsculas/minúsculas y tildes):</label>
+            <select id="setting-advanced-scope">
+                <option value="none">A ningún tema (Validación estricta)</option>
+                <option value="all">A todos los temas globales</option>
+                <option value="custom">Elegir de forma manual en cada tema</option>
+            </select>
+            <p style="font-size:12px; margin: 4px 0 0 0;">*Nota: Si se activa cualquiera de estas opciones y escribes con tildes/puntuación correctas, el sistema las validará como válidas siempre que las palabras coincidan.</p>
+        </div>
+
+        <div class="setting-group">
+            <label><input type="checkbox" id="setting-show-correction"> Mostrar respuesta correcta en caso de fallo (En lugar de saltar rápido)</label>
+        </div>
+
+        <div class="setting-group">
+            <label>Estrategia de Ruta de Descarga al Exportar:</label>
+            <p style="font-size:13px; margin-bottom:8px;">
+                Por motivos de seguridad informática, los navegadores web prohíben que el código de una página acceda de manera automática a rutas nativas de tu disco duro (ej. <code>C:/MisApuntes</code>) para evitar virus de sobreescritura. 
+            </p>
+            <p style="font-size:13px; font-weight: bold; color: var(--accent);">
+                💡 Solución Integrada: Al pulsar exportar, la aplicación abrirá una ventana nativa de tu sistema operativo ("Guardar Como") permitiéndote elegir la carpeta exacta en tu dispositivo.
+            </p>
+        </div>
+
+        <button onclick="saveSettings()">Guardar Ajustes</button>
+        <button onclick="showView('view-home')" class="btn-secondary">Volver</button>
     </div>
 
 </div>
 
 <script>
-    // --- ESTADO DE LA APLICACIÓN ---
-    let topics = JSON.parse(localStorage.getItem('studyTopics')) || [];
+    // --- PERSISTENCIA AVANZADA CON INDEXEDDB ---
+    let db;
+    let topics = [];
+    let settings = {
+        darkMode: false,
+        punctuationScope: 'none',
+        advancedScope: 'none',
+        showCorrection: true
+    };
+
+    // Inicializar base de datos del navegador
+    function initIndexedDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open("StudyAppProfessionalDB", 1);
+            
+            request.onupgradeneeded = function(e) {
+                const database = e.target.result;
+                if (!database.objectStoreNames.contains("topics")) {
+                    database.createObjectStore("topics", { keyPath: "id" });
+                }
+                if (!database.objectStoreNames.contains("settings")) {
+                    database.createObjectStore("settings", { keyPath: "id" });
+                }
+            };
+
+            request.onsuccess = function(e) {
+                db = e.target.result;
+                resolve();
+            };
+
+            request.onerror = function(e) {
+                console.error("Error cargando IndexedDB", e);
+                reject();
+            };
+        });
+    }
+
+    // Funciones utilitarias de Base de datos
+    function dbLoadAll() {
+        return new Promise((resolve) => {
+            const transaction = db.transaction(["topics", "settings"], "readonly");
+            
+            // Cargar Temas
+            const topicsStore = transaction.objectStore("topics");
+            const topicsRequest = topicsStore.getAll();
+            
+            // Cargar Ajustes
+            const settingsStore = transaction.objectStore("settings");
+            const settingsRequest = settingsStore.get("global");
+
+            topicsRequest.onsuccess = function() {
+                topics = topicsRequest.result || [];
+            };
+
+            settingsRequest.onsuccess = function() {
+                if (settingsRequest.result) {
+                    settings = settingsRequest.result.value;
+                }
+            };
+
+            transaction.oncomplete = function() {
+                resolve();
+            };
+        });
+    }
+
+    function dbSaveTopic(topic) {
+        const transaction = db.transaction(["topics"], "readwrite");
+        transaction.objectStore("topics").put(topic);
+    }
+
+    function dbDeleteTopic(id) {
+        const transaction = db.transaction(["topics"], "readwrite");
+        transaction.objectStore("topics").delete(id);
+    }
+
+    function dbSaveSettings() {
+        const transaction = db.transaction(["settings"], "readwrite");
+        transaction.objectStore("settings").put({ id: "global", value: settings });
+    }
+
+    // --- ESTADO INTERNO DEL REPASO ---
     let reviewQueue = [];
     let currentPoint = null;
     let currentTopicId = null;
-    let currentEditingId = null; // null si estamos creando, ID string si estamos editando
+    let currentEditingId = null;
+
+    // --- ARRANQUE DE LA APP ---
+    window.onload = async function() {
+        try {
+            await initIndexedDB();
+            await dbLoadAll();
+            applySettingsUI();
+            renderTopics();
+        } catch (e) {
+            alert("No se pudo iniciar el almacén local IndexedDB. Los cambios no se guardarán de manera permanente.");
+        }
+    };
+
+    // --- AJUSTES Y CONFIGURACIÓN ---
+    function applySettingsUI() {
+        document.getElementById('setting-dark-mode').checked = settings.darkMode;
+        toggleDarkMode(settings.darkMode);
+        document.getElementById('setting-punctuation-scope').value = settings.punctuationScope;
+        document.getElementById('setting-advanced-scope').value = settings.advancedScope;
+        document.getElementById('setting-show-correction').checked = settings.showCorrection;
+    }
+
+    function toggleDarkMode(isDark) {
+        if(isDark) document.body.classList.add('dark-theme');
+        else document.body.classList.remove('dark-theme');
+    }
+
+    function saveSettings() {
+        settings.darkMode = document.getElementById('setting-dark-mode').checked;
+        settings.punctuationScope = document.getElementById('setting-punctuation-scope').value;
+        settings.advancedScope = document.getElementById('setting-advanced-scope').value;
+        settings.showCorrection = document.getElementById('setting-show-correction').checked;
+        
+        dbSaveSettings();
+        alert("Configuración guardada correctamente.");
+        showView('view-home');
+    }
 
     // --- NAVEGACIÓN ---
     function showView(viewId) {
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
         document.getElementById(viewId).classList.add('active');
-        
         if (viewId === 'view-home') renderTopics();
     }
 
-    // --- CREACIÓN Y EDICIÓN DE TEMAS ---
+    // --- PREVISUALIZACIÓN DE IMÁGENES (Conversión a Base64 automática para portabilidad) ---
+    function previewImage(inputElement, imgElementId) {
+        const file = inputElement.files[0];
+        const preview = document.getElementById(imgElementId);
+        
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            }
+            reader.readAsDataURL(file);
+        } else {
+            preview.src = '';
+            preview.style.display = 'none';
+        }
+    }
+
+    function previewPointImage(inputElement) {
+        const file = inputElement.files[0];
+        const preview = inputElement.parentElement.querySelector('.img-preview');
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            }
+            reader.readAsDataURL(file);
+        } else {
+            preview.src = '';
+            preview.style.display = 'none';
+        }
+    }
+
+    // --- GESTIÓN DE CREACIÓN Y EDICIÓN ---
     function showCreateView(id = null) {
         currentEditingId = id;
-        const titleEl = document.getElementById('create-view-title');
-        const nameInput = document.getElementById('new-topic-name');
         const container = document.getElementById('points-container');
-        
+        const headerPreview = document.getElementById('topic-header-preview');
         container.innerHTML = '';
+        headerPreview.src = '';
+        headerPreview.style.display = 'none';
+        
+        // Limpiar inputs de ficheros
+        document.querySelector('.image-uploader input[type="file"]').value = '';
 
         if (id) {
-            // Modo Edición
-            titleEl.innerText = "Modificar Tema";
+            document.getElementById('create-view-title').innerText = "Modificar Tema";
             const topic = topics.find(t => t.id === id);
-            nameInput.value = topic.name;
-            topic.points.forEach(p => addPointField(p.title, p.content));
+            document.getElementById('new-topic-name').value = topic.name;
+            
+            if(topic.image) {
+                headerPreview.src = topic.image;
+                headerPreview.style.display = 'block';
+            }
+
+            // Cargar reglas locales del objeto tema
+            document.getElementById('local-ignore-punctuation').checked = topic.localIgnorePunctuation || false;
+            document.getElementById('local-ignore-advanced').checked = topic.localIgnoreAdvanced || false;
+
+            topic.points.forEach(p => addPointField(p.title, p.content, p.image));
         } else {
-            // Modo Creación Nueva
-            titleEl.innerText = "Crear Nuevo Tema";
-            nameInput.value = '';
-            addPointField(); // Añade un punto en blanco inicial
+            document.getElementById('create-view-title').innerText = "Crear Nuevo Tema";
+            document.getElementById('new-topic-name').value = '';
+            document.getElementById('local-ignore-punctuation').checked = false;
+            document.getElementById('local-ignore-advanced').checked = false;
+            addPointField();
         }
-        
         showView('view-create');
     }
 
-    function addPointField(title = '', content = '') {
+    function addPointField(title = '', content = '', imgBase64 = '') {
         const container = document.getElementById('points-container');
         const pointDiv = document.createElement('div');
         pointDiv.className = 'point-container';
+        
+        const uniqueId = "img-" + Date.now() + "-" + Math.random().toString(36).substr(2, 4);
+
         pointDiv.innerHTML = `
             <label>Título del Punto:</label>
-            <input type="text" class="point-title" placeholder="Ej. Causas de la Primera Guerra Mundial" value="${escapeHtml(title)}">
+            <input type="text" class="point-title" placeholder="Ej. Síntomas principales" value="${escapeHtml(title)}">
             <label>Apuntes (Contenido exacto a memorizar):</label>
-            <textarea class="point-content" placeholder="Escribe aquí el desarrollo...">${escapeHtml(content)}</textarea>
-            <button onclick="this.parentElement.remove()" class="btn-danger" style="padding: 5px 10px; font-size: 14px;">Eliminar Punto</button>
+            <textarea class="point-content" placeholder="Escribe aquí el desarrollo exacto...">${escapeHtml(content)}</textarea>
+            
+            <div class="image-uploader">
+                <label>Imagen para este punto específico (Opcional):</label>
+                <input type="file" accept="image/*" onchange="previewImage(this, '${uniqueId}')">
+                <img id="${uniqueId}" class="img-preview" src="${imgBase64 || ''}" style="${imgBase64 ? 'display:block;' : 'display:none;'}" alt="Vista previa de punto">
+            </div>
+
+            <button onclick="this.parentElement.remove()" class="btn-danger" style="padding: 5px 10px; font-size: 13px; margin-top:5px;">Eliminar Punto</button>
         `;
         container.appendChild(pointDiv);
     }
 
     function saveTopic() {
         const name = document.getElementById('new-topic-name').value.trim();
-        if (!name) return alert('El tema necesita un nombre.');
+        if (!name) return alert('El tema necesita un nombre identificativo.');
 
         const pointNodes = document.querySelectorAll('.point-container');
         const points = [];
 
         for (let node of pointNodes) {
             const title = node.querySelector('.point-title').value.trim();
-            const content = node.querySelector('.point-content').value; 
+            const content = node.querySelector('.point-content').value;
+            const imgPreview = node.querySelector('.img-preview');
+            const imgBase64 = imgPreview && imgPreview.src.startsWith('data:image') ? imgPreview.src : '';
             
             if (title && content) {
-                points.push({ title, content });
+                points.push({ title, content, image: imgBase64 });
             }
         }
 
-        if (points.length === 0) return alert('Debes añadir al menos un punto con título y contenido.');
+        if (points.length === 0) return alert('Debes rellenar al menos un punto completo.');
+
+        const headerImgEl = document.getElementById('topic-header-preview');
+        const topicImgBase64 = headerImgEl.src.startsWith('data:image') ? headerImgEl.src : '';
+
+        const topicData = {
+            id: currentEditingId || Date.now().toString(),
+            name: name,
+            image: topicImgBase64,
+            localIgnorePunctuation: document.getElementById('local-ignore-punctuation').checked,
+            localIgnoreAdvanced: document.getElementById('local-ignore-advanced').checked,
+            points: points
+        };
 
         if (currentEditingId) {
-            // Actualizar tema existente
-            const index = topics.findIndex(t => t.id === currentEditingId);
-            if (index !== -1) {
-                topics[index].name = name;
-                topics[index].points = points;
-            }
+            const idx = topics.findIndex(t => t.id === currentEditingId);
+            if (idx !== -1) topics[idx] = topicData;
         } else {
-            // Crear nuevo tema
-            const newTopic = {
-                id: Date.now().toString(),
-                name: name,
-                points: points
-            };
-            topics.push(newTopic);
+            topics.push(topicData);
         }
 
-        localStorage.setItem('studyTopics', JSON.stringify(topics));
+        dbSaveTopic(topicData);
         showView('view-home');
     }
 
-    // --- RENDERIZADO DE INICIO ---
+    // --- RENDIMIENTO DE LA LISTA DE TEMAS (CON BUSCADOR) ---
     function renderTopics() {
         const container = document.getElementById('topics-container');
         container.innerHTML = '';
+        
+        const searchQuery = document.getElementById('search-input').value.toLowerCase().trim();
+        
+        // Filtrar según el buscador
+        const filteredTopics = topics.filter(t => t.name.toLowerCase().includes(searchQuery));
 
-        if (topics.length === 0) {
-            container.innerHTML = '<p>No hay temas guardados. ¡Crea uno nuevo o importa un archivo!</p>';
+        if (filteredTopics.length === 0) {
+            container.innerHTML = searchQuery ? '<p>No se encontraron temas que coincidan con la búsqueda.</p>' : '<p>No hay temas guardados. ¡Crea uno nuevo!</p>';
             return;
         }
 
-        topics.forEach(topic => {
+        filteredTopics.forEach(topic => {
             const li = document.createElement('li');
             li.className = 'topic-item';
             li.innerHTML = `
@@ -317,6 +641,7 @@
                 <div class="topic-actions">
                     <button onclick="startReview('${topic.id}')">Repasar</button>
                     <button onclick="showCreateView('${topic.id}')" class="btn-accent">Modificar</button>
+                    <button onclick="triggerSmartExport('${topic.id}')" class="btn-secondary" title="Exportar este tema">⬇️</button>
                     <button onclick="deleteTopic('${topic.id}')" class="btn-danger">Borrar</button>
                 </div>
             `;
@@ -325,21 +650,43 @@
     }
 
     function deleteTopic(id) {
-        if (confirm('¿Seguro que quieres borrar este tema?')) {
+        if (confirm('¿Seguro que quieres borrar este tema de la base de datos de manera irreversible?')) {
             topics = topics.filter(t => t.id !== id);
-            localStorage.setItem('studyTopics', JSON.stringify(topics));
+            dbDeleteTopic(id);
             renderTopics();
         }
     }
 
-    // --- LÓGICA DE REPASO ---
-    function shuffleArray(array) {
-        for (let i = array.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [array[i], array[j]] = [array[j], array[i]];
-        }
+    // --- ALGORITMOS DE NORMALIZACIÓN / LIMPIEZA ORTOGRÁFICA ---
+    function cleanPunctuation(str) {
+        // Elimina los signos de puntuación comunes manteniendo letras, números, espacios y acentos
+        return str.replace(/[\u2000-\u206F\u2E00-\u2E7F\\'!"#$%&()*+,\-.\/:;<=>?@\[\]^_`{|}~¡¿]/g, " ").replace(/\s+/g, " ").trim();
     }
 
+    function cleanAdvanced(str) {
+        // Convierte a minúsculas
+        let clean = str.toLowerCase();
+        // Quita tildes, diéresis y normaliza caracteres extraños
+        clean = clean.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        // Quita signos de puntuación
+        return cleanPunctuation(clean);
+    }
+
+    function getTopicRules(topic) {
+        // Evaluar las cascadas de las prioridades de configuración (Global vs Local)
+        let activePunctuation = false;
+        let activeAdvanced = false;
+
+        if (settings.punctuationScope === 'all') activePunctuation = true;
+        else if (settings.punctuationScope === 'custom' && topic.localIgnorePunctuation) activePunctuation = true;
+
+        if (settings.advancedScope === 'all') activeAdvanced = true;
+        else if (settings.advancedScope === 'custom' && topic.localIgnoreAdvanced) activeAdvanced = true;
+
+        return { activePunctuation, activeAdvanced };
+    }
+
+    // --- SISTEMA DE CONTROL DE REPASO ---
     function startReview(topicId) {
         const topic = topics.find(t => t.id === topicId);
         if (!topic) return;
@@ -347,12 +694,26 @@
         currentTopicId = topicId;
         document.getElementById('review-topic-name').innerText = topic.name;
         
+        const headerImg = document.getElementById('review-topic-img');
+        if(topic.image) {
+            headerImg.src = topic.image;
+            headerImg.style.display = 'block';
+        } else {
+            headerImg.style.display = 'none';
+        }
+
         reviewQueue = [...topic.points];
-        shuffleArray(reviewQueue);
+        // Algoritmo de barajado aleatorio
+        for (let i = reviewQueue.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [reviewQueue[i], reviewQueue[j]] = [reviewQueue[j], reviewQueue[i]];
+        }
 
         document.getElementById('review-content').style.display = 'block';
         document.getElementById('review-finished').style.display = 'none';
         document.getElementById('feedback-msg').style.display = 'none';
+        document.getElementById('correction-box').style.display = 'none';
+        document.getElementById('action-buttons-review').style.display = 'block';
         
         showView('view-review');
         loadNextPoint();
@@ -368,95 +729,224 @@
         currentPoint = reviewQueue[0];
         document.getElementById('current-point-title').innerText = currentPoint.title;
         document.getElementById('review-answer').value = '';
+        document.getElementById('review-answer').disabled = false;
+        document.getElementById('action-buttons-review').style.display = 'block';
+        document.getElementById('correction-box').style.display = 'none';
+
+        const ptImg = document.getElementById('review-point-img');
+        if(currentPoint.image) {
+            ptImg.src = currentPoint.image;
+            ptImg.style.display = 'block';
+        } else {
+            ptImg.style.display = 'none';
+        }
     }
 
     function checkAnswer() {
         const userAnswer = document.getElementById('review-answer').value;
         const feedback = document.getElementById('feedback-msg');
+        const topic = topics.find(t => t.id === currentTopicId);
         
-        if (userAnswer === currentPoint.content) {
-            reviewQueue.shift(); 
-            feedback.textContent = '¡Correcto!';
-            feedback.className = 'correct';
-            feedback.style.display = 'block';
+        const rules = getTopicRules(topic);
+        
+        let isCorrect = false;
+
+        // Evaluación inteligente según configuración activa
+        if (rules.activeAdvanced) {
+            isCorrect = (cleanAdvanced(userAnswer) === cleanAdvanced(currentPoint.content));
+        } else if (rules.activePunctuation) {
+            isCorrect = (cleanPunctuation(userAnswer) === cleanPunctuation(currentPoint.content));
         } else {
-            const failedPoint = reviewQueue.shift();
-            reviewQueue.push(failedPoint);
-            feedback.textContent = 'Incorrecto. Tendrás que repetirlo más tarde.';
-            feedback.className = 'incorrect';
-            feedback.style.display = 'block';
+            // Estricta 100% igual
+            isCorrect = (userAnswer === currentPoint.content);
         }
 
-        setTimeout(() => {
-            feedback.style.display = 'none';
-            loadNextPoint();
-        }, 1500);
+        if (isCorrect) {
+            reviewQueue.shift(); // Eliminar de la cola de pendientes
+            feedback.textContent = '¡Respuesta Correcta!';
+            feedback.className = 'correct';
+            feedback.style.display = 'block';
+            
+            setTimeout(() => {
+                feedback.style.display = 'none';
+                loadNextPoint();
+            }, 1200);
+        } else {
+            // Fallo catastrófico: Pasar al final de la lista para re-preguntar luego
+            const failedPoint = reviewQueue.shift();
+            reviewQueue.push(failedPoint);
+
+            feedback.textContent = 'Respuesta Incorrecta.';
+            feedback.className = 'incorrect';
+            feedback.style.display = 'block';
+
+            if (settings.showCorrection) {
+                // Detener el bucle y forzar visualización del texto correcto
+                document.getElementById('review-answer').disabled = true;
+                document.getElementById('action-buttons-review').style.display = 'none';
+                document.getElementById('correct-answer-text').innerText = currentPoint.content;
+                document.getElementById('correction-box').style.display = 'block';
+            } else {
+                // Comportamiento directo antiguo
+                setTimeout(() => {
+                    feedback.style.display = 'none';
+                    loadNextPoint();
+                }, 1500);
+            }
+        }
+    }
+
+    function proceedAfterFailure() {
+        document.getElementById('feedback-msg').style.display = 'none';
+        loadNextPoint();
     }
 
     function cancelReview() {
-        if (confirm('¿Seguro que quieres salir del repaso? El progreso actual se perderá.')) {
+        if (confirm('¿Abandonar sesión de estudio? Se perderá el avance actual de esta ronda.')) {
             showView('view-home');
         }
     }
 
-    // --- FUNCIONALIDAD DE EXPORTAR E IMPORTAR (SINCRONIZACIÓN LOCAL-FIRST) ---
-    function exportData() {
-        if (topics.length === 0) return alert('No tienes temas para exportar.');
+    // --- CONTROL DE EXPORTACIONES INTELIGENTES (CON VENTANA "GUARDAR COMO") ---
+    async function triggerSmartExport(topicId) {
+        const topic = topics.find(t => t.id === topicId);
+        if (!topic) return;
         
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(topics));
-        const downloadAnchorNode = document.createElement('a');
-        downloadAnchorNode.setAttribute("href", dataStr);
-        downloadAnchorNode.setAttribute("download", "mis_temas_estudio.json");
-        document.body.appendChild(downloadAnchorNode);
-        downloadAnchorNode.click();
-        downloadAnchorNode.remove();
-    }
+        const cleanName = topic.name.replace(/[^a-z0-9áéíóúñü_ -\s]/gi, '');
+        const filename = `${cleanName}.json`;
+        const jsonContent = JSON.stringify(topic, null, 2);
 
-    function importData(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
+        // Intentar usar File System Access API para dar administración completa de la ruta
+        if ('showSaveFilePicker' in window) {
             try {
-                const importedTopics = JSON.parse(e.target.result);
-                if (Array.isArray(importedTopics)) {
-                    const mode = confirm("¿Deseas COMBINAR los temas importados con los que ya tienes?\n\n[Aceptar] = Combinar sin borrar\n[Cancelar] = Reemplazar todo lo actual");
-                    
-                    if (mode) {
-                        // Combinar sin duplicar IDs exactos
-                        const existingIds = new Set(topics.map(t => t.id));
-                        importedTopics.forEach(t => {
-                            if (!existingIds.has(t.id)) {
-                                topics.push(t);
-                            } else {
-                                // Si el ID existe, le damos uno nuevo para que coexistan
-                                t.id = Date.now().toString() + Math.random().toString(36).substr(2, 5);
-                                topics.push(t);
-                            }
-                        });
-                    } else {
-                        // Reemplazar por completo
-                        topics = importedTopics;
-                    }
-
-                    localStorage.setItem('studyTopics', JSON.stringify(topics));
-                    renderTopics();
-                    alert("¡Temas importados correctamente!");
-                } else {
-                    alert("El archivo no tiene un formato válido de temas.");
-                }
+                const handle = await window.showSaveFilePicker({
+                    suggestedName: filename,
+                    types: [{
+                        description: 'Archivo de Tema de Estudio JSON',
+                        accept: {'application/json': ['.json']},
+                    }],
+                });
+                const writable = await handle.createWritable();
+                await writable.write(jsonContent);
+                await writable.close();
+                return; // Guardado exitoso mediante selector avanzado de ruta
             } catch (err) {
-                alert("Error al leer el archivo JSON. Asegúrate de que no esté corrupto.");
+                if (err.name === 'AbortError') return; // Cancelado por el usuario voluntariamente
+                console.warn("Fallo showSaveFilePicker, procediendo con descarga tradicional nativa.", err);
             }
-            // Resetear el input file para permitir volver a cargar el mismo archivo
-            event.target.value = '';
-        };
-        reader.readAsText(file);
+        }
+
+        // Caída tradicional si el navegador es antiguo o no soporta HTTPS/seguridad estricta
+        executeClassicDownload(jsonContent, filename);
     }
 
-    // Helper para evitar problemas con comillas o caracteres HTML al renderizar/editar
+    async function exportAllData() {
+        if (topics.length === 0) return alert('No hay temas que exportar.');
+        const jsonContent = JSON.stringify(topics, null, 2);
+        const filename = `copia_completa_estudio_${Date.now()}.json`;
+
+        if ('showSaveFilePicker' in window) {
+            try {
+                const handle = await window.showSaveFilePicker({
+                    suggestedName: filename,
+                    types: [{
+                        description: 'Copia Completa de Temas JSON',
+                        accept: {'application/json': ['.json']},
+                    }],
+                });
+                const writable = await handle.createWritable();
+                await writable.write(jsonContent);
+                await writable.close();
+                return;
+            } catch (err) {
+                if (err.name === 'AbortError') return;
+            }
+        }
+        executeClassicDownload(jsonContent, filename);
+    }
+
+    function executeClassicDownload(content, filename) {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(content);
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", filename);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+    }
+
+    // --- CARGAR CARPETAS ENTERAS DE ARCHIVOS JSON ---
+    function importFolder(event) {
+        const files = event.target.files;
+        if (!files || files.length === 0) return;
+
+        let processedFilesCount = 0;
+        let validTopicsImported = 0;
+
+        const mergeMode = confirm("¿Deseas COMBINAR las carpetas cargadas con tu base de datos actual?\n\n[Aceptar] = Combinar todo manteniendo apuntes actuales\n[Cancelar] = Purgar base de datos y dejar solo la carpeta nueva");
+        
+        if (!mergeMode) {
+            topics = [];
+            const transaction = db.transaction(["topics"], "readwrite");
+            transaction.objectStore("topics").clear();
+        }
+
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            
+            // Ignorar archivos que no sean estrictamente JSON (Mac/Windows metadatos ocultos)
+            if (!file.name.endsWith('.json')) {
+                processedFilesCount++;
+                continue;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedContent = JSON.parse(e.target.result);
+                    
+                    // Puede ser un solo objeto Tema o una lista de Temas
+                    if (Array.isArray(importedContent)) {
+                        importedContent.forEach(t => { if(validateTopicFormat(t)) insertImportedTopic(t); validTopicsImported++; });
+                    } else if (typeof importedContent === 'object' && importedContent !== null) {
+                        if(validateTopicFormat(importedContent)) {
+                            insertImportedTopic(importedContent);
+                            validTopicsImported++;
+                        }
+                    }
+                } catch(err) {
+                    console.error("Error interpretando JSON individual de carpeta: " + file.name);
+                }
+
+                processedFilesCount++;
+                // Cuando todos los hilos FileReader asíncronos terminen
+                if (processedFilesCount === files.length) {
+                    localStorage.setItem('studyTopics', JSON.stringify(topics)); // Retrocompatibilidad limpia
+                    renderTopics();
+                    alert(`Proceso Terminado.\nSe han incorporado con éxito ${validTopicsImported} temas desde la carpeta.`);
+                    event.target.value = ''; // Resetear control
+                }
+            };
+            reader.readAsText(file);
+        }
+    }
+
+    function validateTopicFormat(obj) {
+        return (obj && typeof obj.name === 'string' && Array.isArray(obj.points));
+    }
+
+    function insertImportedTopic(topic) {
+        // Evitar pisar llaves primarias idénticas rompiendo el estado de IndexedDB
+        const targetId = topics.some(t => t.id === topic.id) ? Date.now().toString() + Math.random().toString(36).substr(2, 4) : topic.id;
+        topic.id = targetId;
+        
+        topics.push(topic);
+        dbSaveTopic(topic);
+    }
+
+    // Helper para formatear cadenas e impedir inyecciones de código HTML maliciosas en inputs
     function escapeHtml(text) {
+        if(!text) return '';
         return text
             .replace(/&/g, "&amp;")
             .replace(/</g, "&lt;")
@@ -464,9 +954,6 @@
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&#039;");
     }
-
-    // Inicializar app
-    renderTopics();
 </script>
 </body>
 </html>
